@@ -15,6 +15,14 @@ bl_info = {
 }
 
 
+def set_wireframe():
+    for area in bpy.context.screen.areas:
+        if area.type == "VIEW_3D":
+            for space in area.spaces:
+                if space.type == "VIEW_3D":
+                    space.shading.type = "WIREFRAME"
+
+
 class CSK_OT_select_diff_from_basis(bpy.types.Operator):
     """シェイプキーのBasisの位置が異なる点を選択"""
 
@@ -32,6 +40,7 @@ class CSK_OT_select_diff_from_basis(bpy.types.Operator):
             self.report({"WARNING"}, "Select a shape key WITHOUT Basis.")
             return {"CANCELLED"}
         bpy.ops.object.mode_set(mode="EDIT")  # for deselect
+        bpy.ops.mesh.select_mode(type="VERT")
         bpy.ops.mesh.select_all(action="DESELECT")
         bpy.ops.object.mode_set(mode="OBJECT")  # for select
         kb = obj.data.shape_keys.key_blocks
@@ -41,12 +50,7 @@ class CSK_OT_select_diff_from_basis(bpy.types.Operator):
             if not np.isclose(c1, c2, atol=1e-5).all():
                 obj.data.vertices[i].select = True
         bpy.ops.object.mode_set(mode="EDIT")  # for confirm
-        bpy.ops.mesh.select_mode(type="VERT")
-        for area in bpy.context.screen.areas:
-            if area.type == "VIEW_3D":
-                for space in area.spaces:
-                    if space.type == "VIEW_3D":
-                        space.shading.type = "WIREFRAME"
+        set_wireframe()
         return {"FINISHED"}
 
 
@@ -100,6 +104,34 @@ class CSK_OT_save_vert_to_csv(bpy.types.Operator):
         return {"FINISHED"}
 
 
+class CSK_OT_select_diff_objs(bpy.types.Operator):
+    """2つのオブジェクトの異なる点を選択"""
+
+    bl_idname = "object.select_diff_objs"
+    bl_label = "Sel Diff 2 Obj"
+    bl_description = "Select different vertices of 2 objects."
+
+    def execute(self, context):
+        objs = [obj for obj in bpy.context.selected_objects if obj.type == "MESH"]
+        if len(objs) != 2:
+            self.report({"INFO"}, "Select 2 objects.")
+            return {"CANCELLED"}
+        bpy.ops.object.mode_set(mode="EDIT")  # for deselect
+        bpy.ops.mesh.select_mode(type="VERT")
+        bpy.ops.mesh.select_all(action="DESELECT")
+        bpy.ops.object.mode_set(mode="OBJECT")  # for select
+        dif = set(tuple(vtx.co) for vtx in objs[0].data.vertices) ^ set(
+            tuple(vtx.co) for vtx in objs[1].data.vertices
+        )
+        for obj in objs:
+            for i, vtx in enumerate(obj.data.vertices):
+                if tuple(vtx.co) in dif:
+                    obj.data.vertices[i].select = True
+        bpy.ops.object.mode_set(mode="EDIT")  # for confirm
+        set_wireframe()
+        return {"FINISHED"}
+
+
 class CSK_OT_load_vert_from_csv(bpy.types.Operator):
     """CSVからシェイプキーの点の位置を読込"""
 
@@ -149,6 +181,9 @@ class CSK_PT_bit(bpy.types.Panel):
         self.layout.separator()
         text = CSK_OT_load_vert_from_csv.bl_label
         self.layout.operator(CSK_OT_load_vert_from_csv.bl_idname, text=text)
+        self.layout.separator()
+        text = CSK_OT_select_diff_objs.bl_label
+        self.layout.operator(CSK_OT_select_diff_objs.bl_idname, text=text)
 
 
 ui_classes = (
@@ -156,6 +191,7 @@ ui_classes = (
     CSK_OT_set_vert_from_active,
     CSK_OT_save_vert_to_csv,
     CSK_OT_load_vert_from_csv,
+    CSK_OT_select_diff_objs,
     CSK_PT_bit,
 )
 
