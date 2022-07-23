@@ -27,7 +27,7 @@ class CSK_OT_select_diff_objs(bpy.types.Operator):
     """2つのオブジェクトの異なる点を選択"""
 
     bl_idname = "object.select_diff_objs"
-    bl_label = "Sel Diff 2 Obj"
+    bl_label = "Select Diff 2 Obj"
     bl_description = "Select the different vertices of 2 objects."
 
     def execute(self, context):
