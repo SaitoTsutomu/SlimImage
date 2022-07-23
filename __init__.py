@@ -31,7 +31,7 @@ class CSK_OT_select_diff_objs(bpy.types.Operator):
     bl_description = "Select the different vertices of 2 objects."
 
     def execute(self, context):
-        objs = [obj for obj in bpy.context.objects if obj.type == "MESH"]
+        objs = [obj for obj in context.selected_objects if obj.type == "MESH"]
         if len(objs) != 2:
             self.report({"INFO"}, "Select 2 objects.")
             return {"CANCELLED"}
@@ -93,9 +93,12 @@ class CSK_OT_copy_vertices(bpy.types.Operator):
         if context.mode != "EDIT_MESH":
             self.report({"WARNING"}, "Enter to edit mode.")
             return {"CANCELLED"}
+        bpy.ops.object.mode_set(mode="OBJECT")
+        bpy.ops.object.mode_set(mode="EDIT")  # 選択をselectに反映するため
         obj = context.edit_object
         s = " ".join(str(i) for i, v in enumerate(obj.data.vertices) if v.select)
         context.window_manager.clipboard = f"ShapeKeyPaste {obj.active_shape_key_index} " + s
+        return {"FINISHED"}
 
 
 class CSK_OT_paste_vertices(bpy.types.Operator):
@@ -104,6 +107,7 @@ class CSK_OT_paste_vertices(bpy.types.Operator):
     bl_idname = "object.paste_vertices"
     bl_label = "Paste Vert"
     bl_description = "Paste the position of vertices to active shape key."
+    bl_options = {"REGISTER", "UNDO"}
 
     def execute(self, context):
         if context.mode != "EDIT_MESH":
@@ -111,7 +115,7 @@ class CSK_OT_paste_vertices(bpy.types.Operator):
             return {"CANCELLED"}
         obj = context.edit_object
         ss = context.window_manager.clipboard.split()
-        if len(ss) < 3 or ss[0] != "ShapeKeyPaste" or obj.data.shape_keys:
+        if len(ss) < 3 or ss[0] != "ShapeKeyPaste" or not obj.data.shape_keys:
             self.report({"WARNING"}, "No data in the clipboard or no shape keys.")
             return {"CANCELLED"}
         kb = obj.data.shape_keys.key_blocks
@@ -138,6 +142,8 @@ class CSK_PT_bit(bpy.types.Panel):
     def draw(self, context):
         text = CSK_OT_select_diff_objs.bl_label
         self.layout.operator(CSK_OT_select_diff_objs.bl_idname, text=text)
+
+        self.layout.separator()
         text = CSK_OT_select_diff_from_basis.bl_label
         self.layout.operator(CSK_OT_select_diff_from_basis.bl_idname, text=text)
 

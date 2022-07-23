@@ -1,10 +1,11 @@
 ## Blender Add-on: ShapeKeyPaste
 
-A little bit utility for shape keys.
+Utilities for shape keys.
 
 - Sel Diff 2 Obj: Select the different vertices of 2 objects.
 - Select Diff from basis: Select the different vertices from basis and active shape key.
-- Set Vert: Set vertices from active shape key to target shape key.
+- Copy Vert: Copy the selected vertices from active shape key.
+- Paste Vert: Paste the position of vertices to active shape key.
 
 ## Installation
 
