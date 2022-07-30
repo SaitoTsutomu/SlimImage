@@ -1,3 +1,4 @@
+import importlib
 from importlib import import_module
 from inspect import getmembers
 
@@ -22,18 +23,24 @@ def _get_cls(module_name: str) -> list[type]:
     return ui_classes
 
 
-try:
-    from .core import ui_classes
-
-except ImportError:
-    ui_classes = []
-
-
 def _isprop(pr: object) -> bool:
     return isinstance(pr, bpy.props._PropertyDeferred)
 
 
+# core.py内のOperatorクラスとPanelクラス
+ui_classes: list[type] = []
+
+
 def register():
+    global ui_classes
+    try:
+        import core
+
+        importlib.reload(core)
+        ui_classes[:] = core.ui_classes
+    except (ModuleNotFoundError, AttributeError):
+        ui_classes[:] = []
+
     for ui_class in ui_classes:
         bpy.utils.register_class(ui_class)
         for k, v in getmembers(ui_class, _isprop):
