@@ -7,7 +7,7 @@ from .register_class import _get_cls
 class CDO_OT_diff_obj(bpy.types.Operator):
     """2つのオブジェクトの異なる点を選択"""
 
-    bl_idname = "object_diff_obj"
+    bl_idname = "object.diff_obj"
     bl_label = "Select Diff 2 Obj"
     bl_description = "Select the different vertices of 2 objects."
 
