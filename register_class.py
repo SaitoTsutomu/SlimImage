@@ -34,7 +34,7 @@ ui_classes: list[type] = []
 def register():
     global ui_classes
     try:
-        import core
+        from . import core
 
         importlib.reload(core)
         ui_classes[:] = core.ui_classes
