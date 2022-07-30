@@ -26,10 +26,11 @@ class CDO_OT_diff_obj(bpy.types.Operator):
             tuple(vtx.co) for vtx in objs[1].data.vertices
         )
         for obj in objs:
-            for i, vtx in enumerate(obj.data.vertices):
+            for i, vtx in zip(range(0, self.limit), obj.data.vertices):
                 if tuple(vtx.co) in dif:
                     obj.data.vertices[i].select = True
         bpy.ops.object.mode_set(mode="EDIT")  # for confirm
+        # show wireframe
         for area in bpy.context.screen.areas:
             if area.type == "VIEW_3D":
                 for space in area.spaces:
