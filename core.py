@@ -25,9 +25,13 @@ class CDO_OT_diff_obj(bpy.types.Operator):
         dif = set(tuple(vtx.co) for vtx in objs[0].data.vertices) ^ set(
             tuple(vtx.co) for vtx in objs[1].data.vertices
         )
+        count = 0
         for obj in objs:
-            for i, vtx in zip(range(0, self.limit), obj.data.vertices):
+            for i, vtx in enumerate(obj.data.vertices):
                 if tuple(vtx.co) in dif:
+                    if count >= self.limit:
+                        break
+                    count += 1
                     obj.data.vertices[i].select = True
         bpy.ops.object.mode_set(mode="EDIT")  # for confirm
         # show wireframe
