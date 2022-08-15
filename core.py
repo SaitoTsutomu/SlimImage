@@ -1,59 +1,51 @@
+from math import ceil, log2
+
 import bpy
-from bpy.props import IntProperty
+from bpy.props import BoolProperty, IntProperty
 
 from .register_class import _get_cls
 
 
-class CDO_OT_diff_obj(bpy.types.Operator):
-    """2つのオブジェクトの異なる点を選択"""
+class CSI_OT_slim_image(bpy.types.Operator):
+    """イメージをスリムに"""
 
-    bl_idname = "object.diff_obj"
-    bl_label = "Select Diff 2 Obj"
-    bl_description = "Select the different vertices of 2 objects."
+    bl_idname = "object.slim_image"
+    bl_label = "Slim Image"
+    bl_description = "Slimming down image files."
 
-    limit: IntProperty() = IntProperty(default=1000)  # type: ignore
+    quality: IntProperty() = IntProperty(default=75)  # type: ignore
+    to_small: BoolProperty() = IntProperty(default=True)  # type: ignore
 
     def execute(self, context):
-        objs = [obj for obj in context.selected_objects if obj.type == "MESH"]
-        if len(objs) != 2:
-            self.report({"INFO"}, "Select 2 objects.")
-            return {"CANCELLED"}
-        bpy.ops.object.mode_set(mode="EDIT")  # for deselect
-        bpy.ops.mesh.select_mode(type="VERT")
-        bpy.ops.mesh.select_all(action="DESELECT")
-        bpy.ops.object.mode_set(mode="OBJECT")  # for select
-        dif = set(tuple(vtx.co) for vtx in objs[0].data.vertices) ^ set(
-            tuple(vtx.co) for vtx in objs[1].data.vertices
-        )
-        for obj in objs:
-            count = 0
-            for i, vtx in enumerate(obj.data.vertices):
-                if tuple(vtx.co) in dif:
-                    if count >= self.limit:
-                        break
-                    count += 1
-                    obj.data.vertices[i].select = True
-        bpy.ops.object.mode_set(mode="EDIT")  # for confirm
-        # show wireframe
-        for area in bpy.context.screen.areas:
-            if area.type == "VIEW_3D":
-                for space in area.spaces:
-                    if space.type == "VIEW_3D":
-                        space.shading.type = "WIREFRAME"
+        bpy.context.scene.render.image_settings.quality = self.quality
+        bpy.context.scene.render.image_settings.file_format = "JPEG"
+
+        bpy.ops.file.unpack_all(method="REMOVE")
+        for img in bpy.data.images:
+            if img.name == "Render Result":
+                continue
+            img.filepath = "/tmp/" + img.name.split(".")[0] + ".jpg"
+            r = 2 ** max(0, ceil(log2(img.size[0] * img.size[1] / 2 ** 20)) // 2)
+            if r > 1 and self.to_small:
+                img.scale(img.size[0] // r, img.size[1] // r)
+            img.save_render(img.filepath, scene=bpy.context.scene)
+        bpy.ops.file.pack_all()
         return {"FINISHED"}
 
 
-class CDO_PT_bit(bpy.types.Panel):
-    bl_label = "DiffObj"
+class CSI_PT_bit(bpy.types.Panel):
+    bl_label = "SlimImage"
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
     bl_category = "Edit"
 
     def draw(self, context):
-        self.layout.prop(context.scene, "limit", text="Limit")
-        text = CDO_OT_diff_obj.bl_label
-        prop = self.layout.operator(CDO_OT_diff_obj.bl_idname, text=text)
-        prop.limit = context.scene.limit
+        self.layout.prop(context.scene, "quality", text="Quality")
+        self.layout.prop(context.scene, "to_small", text="To Small")
+        text = CSI_OT_slim_image.bl_label
+        prop = self.layout.operator(CSI_OT_slim_image.bl_idname, text=text)
+        prop.quality = context.scene.quality
+        prop.to_small = context.scene.to_small
 
 
 ui_classes = _get_cls(__name__)
