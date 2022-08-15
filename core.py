@@ -1,3 +1,4 @@
+import os
 from math import ceil, log2
 
 import bpy
@@ -14,9 +15,10 @@ class CSI_OT_slim_image(bpy.types.Operator):
     bl_description = "Slimming down image files."
 
     quality: IntProperty() = IntProperty(default=75)  # type: ignore
-    to_small: BoolProperty() = IntProperty(default=True)  # type: ignore
+    to_small: BoolProperty() = BoolProperty(default=True)  # type: ignore
 
     def execute(self, context):
+        os.makedirs("/tmp/img/", exist_ok=True)
         bpy.context.scene.render.image_settings.quality = self.quality
         bpy.context.scene.render.image_settings.file_format = "JPEG"
 
@@ -24,11 +26,11 @@ class CSI_OT_slim_image(bpy.types.Operator):
         for img in bpy.data.images:
             if img.name == "Render Result":
                 continue
-            img.filepath = "/tmp/" + img.name.split(".")[0] + ".jpg"
             r = 2 ** max(0, ceil(log2(img.size[0] * img.size[1] / 2 ** 20)) // 2)
+            img.filepath_raw = "/tmp/img/" + img.name.split(".")[0] + ".jpg"
             if r > 1 and self.to_small:
                 img.scale(img.size[0] // r, img.size[1] // r)
-            img.save_render(img.filepath, scene=bpy.context.scene)
+            img.save_render(img.filepath_raw, scene=bpy.context.scene)
         bpy.ops.file.pack_all()
         return {"FINISHED"}
 
