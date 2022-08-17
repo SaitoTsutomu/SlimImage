@@ -32,6 +32,7 @@ class CSI_OT_slim_image(bpy.types.Operator):
                 img.scale(img.size[0] // r, img.size[1] // r)
             img.save_render(img.filepath_raw, scene=bpy.context.scene)
         bpy.ops.file.pack_all()
+        bpy.ops.image.save_all_modified()
         return {"FINISHED"}
 
 
